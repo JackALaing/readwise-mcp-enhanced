@@ -1,13 +1,17 @@
 #!/usr/bin/env node
 
+import express from 'express';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { tools } from './tools/tool-definitions.js';
 import { handleToolCall } from './handlers/index.js';
+
+const app = express();
+app.use(express.json());
 
 const server = new Server(
   {
@@ -43,12 +47,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
-async function main() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-}
+// Health endpoint
+app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
 
-main().catch((error) => {
-  console.error('Server error:', error);
-  process.exit(1);
+// MCP endpoint
+app.post('/mcp', async (req, res) => {
+  const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+  await server.connect(transport);
+  await transport.handleRequest(req, res, req.body);
+});
+
+const PORT = process.env.PORT || 8000;
+app.listen(PORT, () => {
+  console.log(`Readwise MCP server running on port ${PORT}`);
 });
