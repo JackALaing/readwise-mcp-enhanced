@@ -128,9 +128,9 @@ npm run build
 
 ---
 
-## 📖 Available Tools (13 Total)
+## 📖 Available Tools (12 Total)
 
-### 📚 **Reader Tools (6) - Enhanced**
+### 📚 **Reader Tools (5) - Enhanced**
 
 #### `readwise_save_document`
 Save documents with full metadata control.
