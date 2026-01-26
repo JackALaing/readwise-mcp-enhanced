@@ -169,23 +169,6 @@ export const tools: Tool[] = [
       additionalProperties: false,
     },
   },
-  {
-    name: 'readwise_topic_search',
-    description: 'Search documents in Readwise Reader by topic using regex matching on title, summary, notes, and tags',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        searchTerms: {
-          type: 'array',
-          items: { type: 'string' },
-          description: 'List of search terms to match against document content (case-insensitive regex matching)',
-          minItems: 1,
-        },
-      },
-      required: ['searchTerms'],
-      additionalProperties: false,
-    },
-  },
   // ========== HIGHLIGHTS TOOLS ==========
   {
     name: 'readwise_list_highlights',

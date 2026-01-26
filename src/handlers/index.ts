@@ -4,7 +4,7 @@ import {
   handleUpdateDocument, 
   handleDeleteDocument 
 } from './document-handlers.js';
-import { handleListTags, handleTopicSearch } from './tag-search-handlers.js';
+import { handleListTags } from './tag-search-handlers.js';
 import {
   handleListHighlights,
   handleCreateHighlight,
@@ -31,10 +31,7 @@ export async function handleToolCall(name: string, args: any) {
       
     case 'readwise_list_tags':
       return handleListTags(args);
-      
-    case 'readwise_topic_search':
-      return handleTopicSearch(args);
-      
+
     // ========== HIGHLIGHTS TOOLS ==========
     case 'readwise_list_highlights':
       return handleListHighlights(args);

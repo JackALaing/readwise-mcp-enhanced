@@ -1,8 +1,8 @@
-import { 
-  ReadwiseDocument, 
-  CreateDocumentRequest, 
-  UpdateDocumentRequest, 
-  ListDocumentsParams, 
+import {
+  ReadwiseDocument,
+  CreateDocumentRequest,
+  UpdateDocumentRequest,
+  ListDocumentsParams,
   ListDocumentsResponse,
   ReadwiseTag,
   ListTagsResponse,
@@ -20,8 +20,7 @@ import {
   ListBooksParams,
   ListBooksResponse,
   SearchHighlightsParams,
-  SearchHighlightsResult,
-  EnhancedTopicSearchResults
+  SearchHighlightsResult
 } from './types.js';
 
 export class ReadwiseClient {
@@ -251,59 +250,6 @@ export class ReadwiseClient {
     }
   }
 
-  async searchDocumentsByTopic(searchTerms: string[]): Promise<APIResponse<ReadwiseDocument[]>> {
-    try {
-      // Fetch all documents without full content for performance
-      const allDocuments: ReadwiseDocument[] = [];
-      let nextPageCursor: string | undefined;
-      
-      do {
-        const params: ListDocumentsParams = {
-          withFullContent: false,
-          withHtmlContent: false,
-        };
-        
-        if (nextPageCursor) {
-          params.pageCursor = nextPageCursor;
-        }
-        
-        const response = await this.listDocuments(params);
-        allDocuments.push(...response.data.results);
-        nextPageCursor = response.data.nextPageCursor;
-      } while (nextPageCursor);
-
-      // Create regex patterns from search terms (case-insensitive)
-      const regexPatterns = searchTerms.map(term => 
-        new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
-      );
-
-      // Filter documents that match any of the search terms
-      const matchingDocuments = allDocuments.filter(doc => {
-        // Extract searchable text fields
-        const searchableFields = [
-          doc.title || '',
-          doc.summary || '',
-          doc.notes || '',
-          // Handle tags - they can be string array or object
-          Array.isArray(doc.tags) ? doc.tags.join(' ') : '',
-        ];
-
-        const searchableText = searchableFields.join(' ').toLowerCase();
-
-        // Check if any regex pattern matches
-        return regexPatterns.some(pattern => pattern.test(searchableText));
-      });
-
-      return this.createResponse(matchingDocuments);
-    } catch (error) {
-      if (error instanceof Error && error.message.startsWith('RATE_LIMIT:')) {
-        const seconds = parseInt(error.message.split(':')[1], 10);
-        throw new Error(`Rate limit exceeded. Too many requests. Please retry after ${seconds} seconds.`);
-      }
-      throw error;
-    }
-  }
-
   // ========== HIGHLIGHTS API METHODS (v2) ==========
 
   async listHighlights(params: ListHighlightsParams = {}): Promise<APIResponse<ListHighlightsResponse>> {
@@ -516,39 +462,6 @@ export class ReadwiseClient {
       const limitedResults = params.limit ? results.slice(0, params.limit) : results;
       
       return this.createResponse(limitedResults);
-    } catch (error) {
-      if (error instanceof Error && error.message.startsWith('RATE_LIMIT:')) {
-        const seconds = parseInt(error.message.split(':')[1], 10);
-        throw new Error(`Rate limit exceeded. Too many requests. Please retry after ${seconds} seconds.`);
-      }
-      throw error;
-    }
-  }
-
-  // Enhanced topic search that includes highlights
-  async searchDocumentsAndHighlights(searchTerms: string[]): Promise<APIResponse<EnhancedTopicSearchResults>> {
-    try {
-      // Get documents (existing functionality)
-      const documentsResponse = await this.searchDocumentsByTopic(searchTerms);
-      
-      // Search highlights using the same terms
-      const highlightsResponse = await this.searchHighlights({
-        textQuery: searchTerms.join(' '),
-        limit: 50
-      });
-      
-      // Get relevant books
-      const bookIds = [...new Set(highlightsResponse.data.map(result => result.book.id))];
-      const booksResponse = await this.listBooks({ page_size: Math.min(bookIds.length, 100) });
-      const relevantBooks = booksResponse.data.results.filter(book => bookIds.includes(book.id));
-      
-      const results: EnhancedTopicSearchResults = {
-        documents: documentsResponse.data,
-        highlights: highlightsResponse.data,
-        books: relevantBooks
-      };
-      
-      return this.createResponse(results);
     } catch (error) {
       if (error instanceof Error && error.message.startsWith('RATE_LIMIT:')) {
         const seconds = parseInt(error.message.split(':')[1], 10);

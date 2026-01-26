@@ -170,11 +170,21 @@ Remove documents from your Reader library
 #### `readwise_list_tags`
 Get all your document tags
 
-#### `readwise_topic_search`
-**⭐ Enhanced with AI-powered text processing**
-- Regex-based search across title, summary, notes, tags
-- Automatic word segmentation for better matching
-- Distributed keyword finding throughout content
+---
+
+### Removed: Topic Search
+
+The `readwise_topic_search` tool has been removed. It previously fetched all documents to perform client-side regex matching, which causes rate limit errors for libraries with 1000+ documents.
+
+**Recommended Alternative**: Use a vector database (Pinecone, Weaviate, etc.) for semantic search across your Readwise library, then fetch specific documents by ID using `readwise_list_documents` with the `id` parameter:
+
+```json
+{
+  "id": "01ke45yb0jgv5675saqyf4a167",
+  "withFullContent": true,
+  "contentFilterKeywords": ["your", "search", "terms"]
+}
+```
 
 ---
 
@@ -281,6 +291,31 @@ Manually add highlights with metadata:
 
 ---
 
+## 📄 Content Filtering (Token Optimization)
+
+When fetching documents with `withFullContent: true`, use these parameters to reduce context window usage:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `contentFilterKeywords` | string[] | Extract only sections containing these terms |
+| `contentMaxLength` | number | Max characters to return (default: 50000) |
+| `contentStartOffset` | number | Start position for pagination through large docs |
+
+### Example: Fetch Relevant Sections Only
+
+```json
+{
+  "id": "01ke45yb0jgv5675saqyf4a167",
+  "withFullContent": true,
+  "contentFilterKeywords": ["customer interviews", "discovery"],
+  "contentMaxLength": 10000
+}
+```
+
+This returns only the portions of the document mentioning "customer interviews" or "discovery", truncated to 10k characters.
+
+---
+
 ## 🧠 AI-Powered Features
 
 ### **Intelligent Word Segmentation**
@@ -328,7 +363,6 @@ v3 API: Reader documents, tags, search
 - ✅ Documents: Save, list, update, delete
 - ✅ Tags: List and filter
 - ✅ Content: Smart extraction with controls
-- ✅ Search: Enhanced topic search
 
 ### **Readwise Highlights API (v2)**  
 - ✅ Highlights: List, create, search, export
@@ -351,6 +385,18 @@ v3 API: Reader documents, tags, search
 - **Reader API**: 20 requests/minute (default), 50/minute (CREATE/UPDATE)
 - **Highlights API**: Standard Readwise limits with automatic retry-after handling
 - **Smart Handling**: 429 responses include "Retry-After" header processing
+
+### Best Practices
+
+**Do:**
+- Fetch documents by specific `id` when possible (1 request per doc)
+- Use filters (`category`, `location`, `tag`) to reduce result sets
+- Cache document metadata locally if building integrations
+
+**Don't:**
+- Paginate through all documents without filters
+- Use `addedAfter` without other filters (triggers full library fetch)
+- Make rapid sequential requests without delays
 
 ---
 

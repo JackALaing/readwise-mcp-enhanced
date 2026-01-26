@@ -220,10 +220,3 @@ export interface SearchHighlightsResult {
   score: number;
   matchedFields: string[];
 }
-
-// Enhanced search results for topic search
-export interface EnhancedTopicSearchResults {
-  documents: ReadwiseDocument[];
-  highlights?: SearchHighlightsResult[];
-  books?: Omit<ReadwiseBook, 'highlights'>[];
-}
